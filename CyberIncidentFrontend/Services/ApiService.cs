@@ -1,24 +1,52 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CyberIncidentWPF.Models;
 
 namespace CyberIncidentWPF.Services
 {
+    /// <summary>
+    /// REST API ile haberleşmeyi sağlayan servis katmanı.
+    /// HttpClient best practices ve güvenlik standartlarına uygun şekilde yapılandırılmıştır.
+    /// </summary>
     public class ApiService
     {
         private readonly HttpClient _httpClient;
-        private const string BaseUrl = "http://localhost:8080/api";
+        
+        // BaseAddress MUTLAKA "/" ile bitmeli - Relative URL birleştirme için kritik!
+        private const string BaseUrl = "http://localhost:8080/api/";
+
+        // Backend, LocalDateTime için offset/fraction içermeyen format bekliyor
+        private const string BackendDateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss";
+        
+        // Merkezi JSON serileştirme ayarları - Tüm metotlarda tutarlılık için
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false,
+            Converters =
+            {
+                new BackendLocalDateTimeConverter(),
+                new BackendNullableLocalDateTimeConverter()
+            }
+        };
 
         public ApiService()
         {
-            // Configure HttpClientHandler for better compatibility
             var handler = new HttpClientHandler
             {
+#if DEBUG
+                // GÜVENLIK: Sertifika doğrulama SADECE geliştirme ortamında devre dışı
+                // Production'da ASLA kullanılmamalı - MITM riskine karşı
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
+#endif
                 UseDefaultCredentials = false
             };
             
@@ -30,127 +58,282 @@ namespace CyberIncidentWPF.Services
                 new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
 
+        #region Helper Methods
+
+        /// <summary>
+        /// Query parametrelerini URL-safe formata encode eder.
+        /// Özel karakterler ve boşluklar içeren değerler için zorunlu.
+        /// </summary>
+        private string BuildQueryString(Dictionary<string, string> parameters)
+        {
+            if (parameters == null || !parameters.Any())
+                return string.Empty;
+
+            var encodedParams = parameters
+                .Where(p => !string.IsNullOrEmpty(p.Value))
+                .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}");
+
+            return "?" + string.Join("&", encodedParams);
+        }
+
+        /// <summary>
+        /// HTTP hata durumlarında response body'yi okuyarak anlamlı hata mesajı üretir.
+        /// 4xx/5xx hatalarında detaylı bilgi sağlar.
+        /// </summary>
+        private async Task<T> HandleResponseAsync<T>(HttpResponseMessage response, string operationName)
+        {
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<T>(json, JsonOptions) 
+                    ?? throw new Exception($"{operationName}: Deserialization returned null");
+            }
+
+            // Hata durumunda response body'yi oku
+            var errorContent = await response.Content.ReadAsStringAsync();
+            var statusCode = (int)response.StatusCode;
+            
+            throw new HttpRequestException(
+                $"{operationName} failed.\n" +
+                $"Status Code: {statusCode} ({response.StatusCode})\n" +
+                $"Reason: {response.ReasonPhrase}\n" +
+                $"Details: {errorContent}");
+        }
+
+        private sealed class BackendLocalDateTimeConverter : JsonConverter<DateTime>
+        {
+            public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                // Backend "yyyy-MM-ddTHH:mm:ss" üretiyor; bunun dışındaki ISO formatları da tolere edelim
+                if (reader.TokenType != JsonTokenType.String)
+                    throw new JsonException("Expected string for DateTime.");
+
+                var s = reader.GetString();
+                if (string.IsNullOrWhiteSpace(s))
+                    return default;
+
+                if (DateTime.TryParseExact(s, BackendDateTimeFormat, CultureInfo.InvariantCulture,
+                        DateTimeStyles.AssumeLocal | DateTimeStyles.AllowWhiteSpaces, out var exact))
+                {
+                    return DateTime.SpecifyKind(exact, DateTimeKind.Unspecified);
+                }
+
+                if (DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var fallback))
+                    return fallback;
+
+                throw new JsonException($"Invalid DateTime value: '{s}'");
+            }
+
+            public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+            {
+                // Offset/fraction olmadan yaz
+                writer.WriteStringValue(value.ToString(BackendDateTimeFormat, CultureInfo.InvariantCulture));
+            }
+        }
+
+        private sealed class BackendNullableLocalDateTimeConverter : JsonConverter<DateTime?>
+        {
+            public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                if (reader.TokenType == JsonTokenType.Null)
+                    return null;
+                if (reader.TokenType != JsonTokenType.String)
+                    throw new JsonException("Expected string for nullable DateTime.");
+
+                var s = reader.GetString();
+                if (string.IsNullOrWhiteSpace(s))
+                    return null;
+
+                if (DateTime.TryParseExact(s, BackendDateTimeFormat, CultureInfo.InvariantCulture,
+                        DateTimeStyles.AssumeLocal | DateTimeStyles.AllowWhiteSpaces, out var exact))
+                {
+                    return DateTime.SpecifyKind(exact, DateTimeKind.Unspecified);
+                }
+
+                if (DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var fallback))
+                    return fallback;
+
+                throw new JsonException($"Invalid DateTime value: '{s}'");
+            }
+
+            public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+            {
+                if (value == null)
+                {
+                    writer.WriteNullValue();
+                    return;
+                }
+                writer.WriteStringValue(value.Value.ToString(BackendDateTimeFormat, CultureInfo.InvariantCulture));
+            }
+        }
+
+        /// <summary>
+        /// PATCH istekleri için manuel HttpRequestMessage oluşturur.
+        /// .NET 5 öncesi sürümlerde PatchAsync desteği olmadığından zorunlu.
+        /// </summary>
+        private async Task<HttpResponseMessage> SendPatchAsync(string requestUri, HttpContent content)
+        {
+            var request = new HttpRequestMessage(new HttpMethod("PATCH"), requestUri)
+            {
+                Content = content
+            };
+            
+            return await _httpClient.SendAsync(request);
+        }
+
+        #endregion
+
         #region Incident Operations
 
-        // Get all incidents with optional filters
+        /// <summary>
+        /// Tüm incidents'ları filtrelerle birlikte getirir.
+        /// Query parametreleri otomatik olarak URL encode edilir.
+        /// </summary>
         public async Task<List<Incident>> GetIncidentsAsync(string? type = null, 
             string? severity = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
-                var queryParams = new List<string>();
-                if (!string.IsNullOrEmpty(type)) queryParams.Add($"type={type}");
-                if (!string.IsNullOrEmpty(severity)) queryParams.Add($"severity={severity}");
-                if (startDate.HasValue) queryParams.Add($"startDate={startDate:yyyy-MM-dd}");
-                if (endDate.HasValue) queryParams.Add($"endDate={endDate:yyyy-MM-dd}");
+                var queryParams = new Dictionary<string, string>();
+                
+                if (!string.IsNullOrEmpty(type))
+                    queryParams["type"] = type;
+                if (!string.IsNullOrEmpty(severity))
+                    queryParams["severity"] = severity;
+                if (startDate.HasValue)
+                    queryParams["startDate"] = startDate.Value.ToString(BackendDateTimeFormat);
+                if (endDate.HasValue)
+                    queryParams["endDate"] = endDate.Value.ToString(BackendDateTimeFormat);
 
-                var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-                var response = await _httpClient.GetAsync($"/incidents{query}");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<Incident>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? new List<Incident>();
+                var query = BuildQueryString(queryParams);
+                var response = await _httpClient.GetAsync($"incidents{query}");
+                
+                return await HandleResponseAsync<List<Incident>>(response, "Get incidents") 
+                    ?? new List<Incident>();
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to get incidents: {ex.Message}", ex);
             }
+            catch (TaskCanceledException ex)
+            {
+                throw new Exception("Request timeout: Backend did not respond in time", ex);
+            }
         }
 
-        // Get incident by ID
+        /// <summary>
+        /// ID'ye göre tek bir incident getirir.
+        /// </summary>
         public async Task<Incident?> GetIncidentByIdAsync(int id)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/incidents/{id}");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<Incident>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var response = await _httpClient.GetAsync($"incidents/{id}");
+                return await HandleResponseAsync<Incident>(response, $"Get incident {id}");
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                throw new Exception($"Failed to get incident: {ex.Message}", ex);
+                throw new Exception($"Failed to get incident {id}: {ex.Message}", ex);
             }
         }
 
-        // Create new incident
+        /// <summary>
+        /// Yeni incident oluşturur.
+        /// </summary>
         public async Task<Incident> CreateIncidentAsync(Incident incident)
         {
             try
             {
-                var json = JsonSerializer.Serialize(incident);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("/incidents", content);
-                response.EnsureSuccessStatusCode();
-
-                var responseJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<Incident>(responseJson, new JsonSerializerOptions
+                // Backend sadece bu alanları bekliyor; ekstra alanları göndermeyelim
+                var payload = new
                 {
-                    PropertyNameCaseInsensitive = true
-                }) ?? throw new Exception("Failed to deserialize created incident");
+                    title = incident.Title,
+                    description = incident.Description,
+                    incidentType = incident.IncidentType,
+                    severityLevel = incident.SeverityLevel,
+                    incidentDate = incident.IncidentDate,
+                    reporterId = incident.ReporterId
+                };
+
+                var json = JsonSerializer.Serialize(payload, JsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("incidents", content);
+                
+                return await HandleResponseAsync<Incident>(response, "Create incident")
+                    ?? throw new Exception("Create incident: Response was null");
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to create incident: {ex.Message}", ex);
             }
         }
 
-        // Update incident
+        /// <summary>
+        /// Incident'ı günceller.
+        /// </summary>
         public async Task<Incident> UpdateIncidentAsync(int id, Incident incident)
         {
             try
             {
-                var json = JsonSerializer.Serialize(incident);
+                var json = JsonSerializer.Serialize(incident, JsonOptions);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PutAsync($"/incidents/{id}", content);
-                response.EnsureSuccessStatusCode();
-
-                var responseJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<Incident>(responseJson, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? throw new Exception("Failed to deserialize updated incident");
+                var response = await _httpClient.PutAsync($"incidents/{id}", content);
+                
+                return await HandleResponseAsync<Incident>(response, $"Update incident {id}")
+                    ?? throw new Exception("Update incident: Response was null");
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                throw new Exception($"Failed to update incident: {ex.Message}", ex);
+                throw new Exception($"Failed to update incident {id}: {ex.Message}", ex);
             }
         }
 
-        // Update incident status
+        /// <summary>
+        /// Incident durumunu günceller (PATCH).
+        /// HttpRequestMessage kullanılarak framework uyumluluğu sağlanır.
+        /// </summary>
         public async Task UpdateIncidentStatusAsync(int incidentId, string status)
         {
             try
             {
-                var json = JsonSerializer.Serialize(new { status });
+                var json = JsonSerializer.Serialize(new { status }, JsonOptions);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PatchAsync($"/incidents/{incidentId}/status", content);
-                response.EnsureSuccessStatusCode();
+                
+                // PATCH desteği olmayan .NET sürümleri için manuel request
+                var response = await SendPatchAsync($"incidents/{incidentId}/status", content);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException(
+                        $"Update status failed: {(int)response.StatusCode} - {errorContent}");
+                }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to update incident status: {ex.Message}", ex);
             }
         }
 
-        // Delete incident
+        /// <summary>
+        /// Incident'ı siler.
+        /// </summary>
         public async Task DeleteIncidentAsync(int id)
         {
             try
             {
-                var response = await _httpClient.DeleteAsync($"/incidents/{id}");
-                response.EnsureSuccessStatusCode();
+                var response = await _httpClient.DeleteAsync($"incidents/{id}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException(
+                        $"Delete failed: {(int)response.StatusCode} - {errorContent}");
+                }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                throw new Exception($"Failed to delete incident: {ex.Message}", ex);
+                throw new Exception($"Failed to delete incident {id}: {ex.Message}", ex);
             }
         }
 
@@ -158,63 +341,54 @@ namespace CyberIncidentWPF.Services
 
         #region User Operations
 
-        // Get all users
+        /// <summary>
+        /// Tüm kullanıcıları getirir.
+        /// </summary>
         public async Task<List<User>> GetUsersAsync()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/users");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<User>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? new List<User>();
+                var response = await _httpClient.GetAsync("users");
+                return await HandleResponseAsync<List<User>>(response, "Get users")
+                    ?? new List<User>();
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to get users: {ex.Message}", ex);
             }
         }
 
-        // Get user by ID
+        /// <summary>
+        /// ID'ye göre kullanıcı getirir.
+        /// </summary>
         public async Task<User?> GetUserByIdAsync(int id)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/users/{id}");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<User>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var response = await _httpClient.GetAsync($"users/{id}");
+                return await HandleResponseAsync<User>(response, $"Get user {id}");
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                throw new Exception($"Failed to get user: {ex.Message}", ex);
+                throw new Exception($"Failed to get user {id}: {ex.Message}", ex);
             }
         }
 
-        // Create user
+        /// <summary>
+        /// Yeni kullanıcı oluşturur.
+        /// </summary>
         public async Task<User> CreateUserAsync(User user)
         {
             try
             {
-                var json = JsonSerializer.Serialize(user);
+                var json = JsonSerializer.Serialize(user, JsonOptions);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("/users", content);
-                response.EnsureSuccessStatusCode();
-
-                var responseJson = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<User>(responseJson, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? throw new Exception("Failed to deserialize created user");
+                var response = await _httpClient.PostAsync("users", content);
+                
+                return await HandleResponseAsync<User>(response, "Create user")
+                    ?? throw new Exception("Create user: Response was null");
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to create user: {ex.Message}", ex);
             }
@@ -224,108 +398,117 @@ namespace CyberIncidentWPF.Services
 
         #region Analytics Operations
 
-        // Get incident count by type
+        /// <summary>
+        /// Incident tip istatistiklerini getirir.
+        /// </summary>
         public async Task<List<IncidentTypeStats>> GetIncidentTypeStatsAsync()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/analytics/incident-types");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<IncidentTypeStats>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? new List<IncidentTypeStats>();
+                var response = await _httpClient.GetAsync("analytics/incident-types");
+                var dict = await HandleResponseAsync<Dictionary<string, int>>(response, "Get incident type stats");
+                return dict?
+                    .OrderByDescending(kvp => kvp.Value)
+                    .Select(kvp => new IncidentTypeStats { IncidentType = kvp.Key, Count = kvp.Value })
+                    .ToList()
+                    ?? new List<IncidentTypeStats>();
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to get incident type stats: {ex.Message}", ex);
             }
         }
 
-        // Get severity statistics
+        /// <summary>
+        /// Severity istatistiklerini getirir.
+        /// </summary>
         public async Task<List<SeverityStats>> GetSeverityStatsAsync()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/analytics/severity-stats");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<SeverityStats>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? new List<SeverityStats>();
+                var response = await _httpClient.GetAsync("analytics/severity-stats");
+                var dict = await HandleResponseAsync<Dictionary<string, int>>(response, "Get severity stats");
+                return dict?
+                    .OrderByDescending(kvp => kvp.Value)
+                    .Select(kvp => new SeverityStats { SeverityLevel = kvp.Key, Count = kvp.Value })
+                    .ToList()
+                    ?? new List<SeverityStats>();
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to get severity stats: {ex.Message}", ex);
             }
         }
 
-        // Get critical incident count
+        /// <summary>
+        /// Kritik incident sayısını getirir.
+        /// </summary>
         public async Task<int> GetCriticalIncidentCountAsync()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/analytics/critical-count");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<Dictionary<string, int>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var response = await _httpClient.GetAsync("analytics/critical-count");
+                var result = await HandleResponseAsync<Dictionary<string, int>>(response, "Get critical count");
                 return result?.GetValueOrDefault("criticalCount", 0) ?? 0;
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to get critical incident count: {ex.Message}", ex);
             }
         }
 
-        // Get status summary
+        /// <summary>
+        /// Durum özetini getirir.
+        /// </summary>
         public async Task<List<StatusSummary>> GetStatusSummaryAsync()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/analytics/status-summary");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<StatusSummary>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? new List<StatusSummary>();
+                // UI tarafı StatusSummary listesi bekliyor; backend bu veriyi /status-stats ile Map olarak dönüyor
+                var response = await _httpClient.GetAsync("analytics/status-stats");
+                var dict = await HandleResponseAsync<Dictionary<string, int>>(response, "Get status stats");
+                return dict?
+                    .OrderByDescending(kvp => kvp.Value)
+                    .Select(kvp => new StatusSummary { Status = kvp.Key, Count = kvp.Value })
+                    .ToList()
+                    ?? new List<StatusSummary>();
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to get status summary: {ex.Message}", ex);
             }
         }
 
-        // Get timeline data
+        /// <summary>
+        /// Zaman çizelgesi verilerini getirir.
+        /// </summary>
         public async Task<List<TimelineData>> GetTimelineDataAsync()
         {
             try
             {
-                var response = await _httpClient.GetAsync("/analytics/timeline");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<TimelineData>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? new List<TimelineData>();
+                var response = await _httpClient.GetAsync("analytics/timeline");
+                return await HandleResponseAsync<List<TimelineData>>(response, "Get timeline data")
+                    ?? new List<TimelineData>();
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 throw new Exception($"Failed to get timeline data: {ex.Message}", ex);
             }
         }
 
         #endregion
+
+        #region IDisposable Pattern (Optional - HttpClient Lifecycle Management)
+
+        /// <summary>
+        /// HttpClient kaynaklarını temizler.
+        /// NOT: Singleton kullanımında Dispose çağrılmamalı!
+        /// </summary>
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
+        }
+
+        #endregion
     }
 }
-

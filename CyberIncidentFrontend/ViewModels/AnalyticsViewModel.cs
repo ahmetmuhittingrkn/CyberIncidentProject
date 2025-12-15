@@ -74,7 +74,8 @@ namespace CyberIncidentWPF.ViewModels
 
         public AnalyticsViewModel()
         {
-            _apiService = new ApiService();
+            // Singleton pattern - HttpClient socket tükenmesini önler
+            _apiService = ApiServiceProvider.Instance;
             _incidentTypeStats = new ObservableCollection<IncidentTypeStats>();
             _severityStats = new ObservableCollection<SeverityStats>();
             _statusSummary = new ObservableCollection<StatusSummary>();

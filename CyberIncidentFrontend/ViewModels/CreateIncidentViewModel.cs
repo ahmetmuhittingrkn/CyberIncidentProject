@@ -70,7 +70,8 @@ namespace CyberIncidentWPF.ViewModels
 
         public CreateIncidentViewModel()
         {
-            _apiService = new ApiService();
+            // Singleton pattern - HttpClient socket tükenmesini önler
+            _apiService = ApiServiceProvider.Instance;
 
             IncidentTypes = new ObservableCollection<string>
             {
