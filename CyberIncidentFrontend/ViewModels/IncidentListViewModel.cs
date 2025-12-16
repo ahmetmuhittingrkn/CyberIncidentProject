@@ -78,6 +78,7 @@ namespace CyberIncidentWPF.ViewModels
         public ICommand ApplyFiltersCommand { get; }
         public ICommand ClearFiltersCommand { get; }
         public ICommand DeleteIncidentCommand { get; }
+        public ICommand EditIncidentCommand { get; }
         public ICommand UpdateStatusCommand { get; }
         public ICommand ViewDetailsCommand { get; }
 
@@ -107,6 +108,7 @@ namespace CyberIncidentWPF.ViewModels
             ApplyFiltersCommand = new RelayCommand(async _ => await ApplyFiltersAsync());
             ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
             DeleteIncidentCommand = new RelayCommand<int>(async id => await DeleteIncidentAsync(id));
+            EditIncidentCommand = new RelayCommand<Incident>(EditIncident);
             UpdateStatusCommand = new RelayCommand<string>(async status => await UpdateStatusAsync(status));
             ViewDetailsCommand = new RelayCommand<Incident>(ViewDetails);
 
@@ -236,6 +238,25 @@ namespace CyberIncidentWPF.ViewModels
 
             var detailsWindow = new Views.IncidentDetailWindow(incident);
             detailsWindow.ShowDialog();
+        }
+
+        private void EditIncident(Incident? incident)
+        {
+            if (incident == null)
+                return;
+
+            var editViewModel = new EditIncidentViewModel(incident);
+            var editWindow = new Views.EditIncidentWindow
+            {
+                DataContext = editViewModel
+            };
+
+            editViewModel.RequestClose += () => editWindow.Close();
+            
+            editWindow.ShowDialog();
+            
+            // Refresh list after edit
+            _ = LoadIncidentsAsync();
         }
     }
 }

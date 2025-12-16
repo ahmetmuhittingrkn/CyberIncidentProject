@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -9,9 +10,10 @@ using CyberIncidentWPF.Services;
 
 namespace CyberIncidentWPF.ViewModels
 {
-    public class CreateIncidentViewModel : ObservableObject
+    public class EditIncidentViewModel : ObservableObject
     {
         private readonly ApiService _apiService;
+        private readonly Incident _originalIncident;
         private string _title = string.Empty;
         private string _description = string.Empty;
         private string _selectedType = "PHISHING";
@@ -66,13 +68,15 @@ namespace CyberIncidentWPF.ViewModels
         public ObservableCollection<string> SeverityLevels { get; }
         public ObservableCollection<User> Users { get; }
 
-        public ICommand CreateIncidentCommand { get; }
-        public ICommand ClearFormCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand CancelCommand { get; }
 
-        public CreateIncidentViewModel()
+        public event Action? RequestClose;
+
+        public EditIncidentViewModel(Incident incident)
         {
-            // Singleton pattern - HttpClient socket tükenmesini önler
             _apiService = ApiServiceProvider.Instance;
+            _originalIncident = incident;
 
             IncidentTypes = new ObservableCollection<string>
             {
@@ -87,14 +91,21 @@ namespace CyberIncidentWPF.ViewModels
 
             Users = new ObservableCollection<User>();
 
-            CreateIncidentCommand = new RelayCommand(async _ => await CreateIncidentAsync(), _ => CanCreateIncident());
-            ClearFormCommand = new RelayCommand(_ => ClearForm());
+            SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
+            CancelCommand = new RelayCommand(_ => RequestClose?.Invoke());
 
-            // Load users
-            _ = LoadUsersAsync();
+            // Initialize fields
+            Title = incident.Title;
+            Description = incident.Description;
+            SelectedType = incident.IncidentType;
+            SelectedSeverity = incident.SeverityLevel;
+            IncidentDate = incident.IncidentDate;
+
+            // Load users and select the reporter
+            _ = LoadUsersAsync(incident.ReporterId);
         }
 
-        private async Task LoadUsersAsync()
+        private async Task LoadUsersAsync(int reporterId)
         {
             try
             {
@@ -105,18 +116,19 @@ namespace CyberIncidentWPF.ViewModels
                     Users.Add(user);
                 }
 
-                if (Users.Count > 0)
+                SelectedReporter = Users.FirstOrDefault(u => u.UserId == reporterId);
+                if (SelectedReporter == null && Users.Any())
                 {
-                    SelectedReporter = Users[0];
+                    SelectedReporter = Users.First();
                 }
             }
             catch (Exception)
             {
-                // Silently fail or log
+                // Silently fail
             }
         }
 
-        private bool CanCreateIncident()
+        private bool CanSave()
         {
             return !string.IsNullOrWhiteSpace(Title) &&
                    !string.IsNullOrWhiteSpace(Description) &&
@@ -124,49 +136,37 @@ namespace CyberIncidentWPF.ViewModels
                    !IsSubmitting;
         }
 
-        private async Task CreateIncidentAsync()
+        private async Task SaveAsync()
         {
             try
             {
                 IsSubmitting = true;
 
-                var incident = new Incident
+                var updatedIncident = new Incident
                 {
+                    IncidentId = _originalIncident.IncidentId,
                     Title = Title,
                     Description = Description,
                     IncidentType = SelectedType,
                     SeverityLevel = SelectedSeverity,
                     IncidentDate = IncidentDate,
-                    ReporterId = SelectedReporter?.UserId ?? 1
+                    ReporterId = SelectedReporter?.UserId ?? 1,
+                    Status = _originalIncident.Status // Preserve status
                 };
 
-                var result = await _apiService.CreateIncidentAsync(incident);
+                await _apiService.UpdateIncidentAsync(_originalIncident.IncidentId, updatedIncident);
 
-                MessageBox.Show($"Incident created successfully!\nIncident ID: {result.IncidentId}", 
-                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                ClearForm();
+                MessageBox.Show("Incident updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                RequestClose?.Invoke();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error creating incident: {ex.Message}", "Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error updating incident: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsSubmitting = false;
             }
         }
-
-        private void ClearForm()
-        {
-            Title = string.Empty;
-            Description = string.Empty;
-            SelectedType = "PHISHING";
-            SelectedSeverity = "MEDIUM";
-            IncidentDate = DateTime.Now;
-            if (Users.Count > 0) SelectedReporter = Users[0];
-        }
     }
 }
-

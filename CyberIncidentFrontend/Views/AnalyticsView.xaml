@@ -4,10 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:controls="clr-namespace:CyberIncidentWPF.Controls"
+             xmlns:helpers="clr-namespace:CyberIncidentWPF.Helpers"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1000">
     
     <UserControl.Resources>
+        <helpers:CountToHeightConverter x:Key="CountToHeightConverter"/>
+        
         <!-- Stat Card Style -->
         <Style x:Key="StatCardStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>

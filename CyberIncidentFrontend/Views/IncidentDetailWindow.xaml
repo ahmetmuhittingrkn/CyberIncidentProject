@@ -4,138 +4,335 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Incident Details" Height="600" Width="700"
-        WindowStartupLocation="CenterScreen">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        Title="Incident Details" Height="700" Width="800"
+        WindowStartupLocation="CenterScreen"
+        Background="#F9FAFB"
+        ResizeMode="CanResize">
+    
+    <Window.Resources>
+        <!-- Field Label Style -->
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#6B7280"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
 
-        <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Incident Details" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+        <!-- Field Value Style -->
+        <Style x:Key="FieldValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="#111827"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
 
-        <!-- Details -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="5" Padding="20">
+        <!-- Detail Row Style -->
+        <Style x:Key="DetailRowStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Padding="30">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" Background="White" CornerRadius="16" Padding="30,25" Margin="0,0,0,25">
+                <Border.Effect>
+                    <DropShadowEffect ShadowDepth="1" BlurRadius="15" Opacity="0.08" Direction="270"/>
+                </Border.Effect>
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="150"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Incident ID -->
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Incident ID:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding IncidentId}" Margin="0,0,0,15"/>
-
-                    <!-- Title -->
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Title:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Title}" TextWrapping="Wrap" Margin="0,0,0,15"/>
-
-                    <!-- Description -->
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Description:" FontWeight="Bold" 
-                               Margin="0,0,0,15" VerticalAlignment="Top"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Description}" 
-                               TextWrapping="Wrap" Margin="0,0,0,15"/>
-
-                    <!-- Type -->
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Type:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding IncidentType}" Margin="0,0,0,15"/>
-
-                    <!-- Severity -->
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Severity:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SeverityLevel}" 
-                               FontWeight="Bold" Margin="0,0,0,15">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="CRITICAL">
-                                        <Setter Property="Foreground" Value="Red"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="HIGH">
-                                        <Setter Property="Foreground" Value="Orange"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="MEDIUM">
-                                        <Setter Property="Foreground" Value="#FFA500"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="LOW">
-                                        <Setter Property="Foreground" Value="Green"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-
-                    <!-- Status -->
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Status}" 
-                               FontWeight="SemiBold" Margin="0,0,0,15">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Status}" Value="OPEN">
-                                        <Setter Property="Foreground" Value="Blue"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="IN_PROGRESS">
-                                        <Setter Property="Foreground" Value="Orange"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="RESOLVED">
-                                        <Setter Property="Foreground" Value="Green"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="CLOSED">
-                                        <Setter Property="Foreground" Value="Gray"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-
-                    <!-- Incident Date -->
-                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Incident Date:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="6" Grid.Column="1" 
-                               Text="{Binding IncidentDate, StringFormat='yyyy-MM-dd HH:mm'}" Margin="0,0,0,15"/>
-
-                    <!-- Reporter -->
-                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Reporter:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding ReporterName}" Margin="0,0,0,15"/>
-
-                    <!-- Created At -->
-                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Created At:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="8" Grid.Column="1" 
-                               Text="{Binding CreatedAt, StringFormat='yyyy-MM-dd HH:mm'}" Margin="0,0,0,15"/>
-
-                    <!-- Updated At -->
-                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Updated At:" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <TextBlock Grid.Row="9" Grid.Column="1" 
-                               Text="{Binding UpdatedAt, StringFormat='yyyy-MM-dd HH:mm'}" Margin="0,0,0,15"/>
-
-                    <!-- Resolved At -->
-                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Resolved At:" FontWeight="Bold"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1" 
-                               Text="{Binding ResolvedAt, StringFormat='yyyy-MM-dd HH:mm', TargetNullValue='Not resolved yet'}"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔍" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="Incident Details" FontSize="28" FontWeight="Bold" 
+                                       Foreground="#111827" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Complete information about this security incident" 
+                                   FontSize="13" Foreground="#6B7280" Margin="40,5,0,0"/>
+                    </StackPanel>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" 
+                            Background="#EEF2FF" CornerRadius="8" Padding="12,6">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="ID:" FontSize="11" Foreground="#6B7280" 
+                                       FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding IncidentId}" FontSize="13" 
+                                       Foreground="#6366F1" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
-        </ScrollViewer>
 
-        <!-- Close Button -->
-        <Button Grid.Row="2" Content="Close" Click="CloseButton_Click" 
-                Background="#6C757D" Foreground="White" 
-                Padding="30,10" Margin="0,15,0,0" 
-                HorizontalAlignment="Center" FontSize="14"/>
-    </Grid>
+            <!-- Details Content -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <Border Background="White" CornerRadius="16" Padding="30">
+                    <Border.Effect>
+                        <DropShadowEffect ShadowDepth="1" BlurRadius="15" Opacity="0.08" Direction="270"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Title Section -->
+                        <Border Style="{StaticResource DetailRowStyle}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#EEF2FF" Offset="0"/>
+                                    <GradientStop Color="White" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <StackPanel>
+                                <TextBlock Text="TITLE" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" 
+                                           Foreground="#111827" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Description Section -->
+                        <Border Style="{StaticResource DetailRowStyle}">
+                            <StackPanel>
+                                <TextBlock Text="DESCRIPTION" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="{Binding Description}" Style="{StaticResource FieldValueStyle}" 
+                                           LineHeight="22"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Type and Severity Row -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Type -->
+                            <Border Grid.Column="0" Style="{StaticResource DetailRowStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="INCIDENT TYPE" Style="{StaticResource FieldLabelStyle}"/>
+                                    <Border Background="#F3F4F6" CornerRadius="8" Padding="12,8" HorizontalAlignment="Left">
+                                        <TextBlock Text="{Binding IncidentType}" FontSize="13" 
+                                                   FontWeight="SemiBold" Foreground="#374151"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Severity -->
+                            <Border Grid.Column="2" Style="{StaticResource DetailRowStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="SEVERITY LEVEL" Style="{StaticResource FieldLabelStyle}"/>
+                                    <Border CornerRadius="8" Padding="12,8" HorizontalAlignment="Left">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="CRITICAL">
+                                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="HIGH">
+                                                        <Setter Property="Background" Value="#FED7AA"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="MEDIUM">
+                                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SeverityLevel}" Value="LOW">
+                                                        <Setter Property="Background" Value="#D1FAE5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding SeverityLevel}" FontSize="13" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SeverityLevel}" Value="CRITICAL">
+                                                            <Setter Property="Foreground" Value="#DC2626"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SeverityLevel}" Value="HIGH">
+                                                            <Setter Property="Foreground" Value="#EA580C"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SeverityLevel}" Value="MEDIUM">
+                                                            <Setter Property="Foreground" Value="#CA8A04"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SeverityLevel}" Value="LOW">
+                                                            <Setter Property="Foreground" Value="#059669"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Status -->
+                        <Border Style="{StaticResource DetailRowStyle}">
+                            <StackPanel>
+                                <TextBlock Text="STATUS" Style="{StaticResource FieldLabelStyle}"/>
+                                <Border CornerRadius="8" Padding="14,8" HorizontalAlignment="Left">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="OPEN">
+                                                    <Setter Property="Background" Value="#DBEAFE"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="IN_PROGRESS">
+                                                    <Setter Property="Background" Value="#FED7AA"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="RESOLVED">
+                                                    <Setter Property="Background" Value="#D1FAE5"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="CLOSED">
+                                                    <Setter Property="Background" Value="#F3F4F6"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding Status}" FontSize="14" FontWeight="Bold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="OPEN">
+                                                        <Setter Property="Foreground" Value="#2563EB"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="IN_PROGRESS">
+                                                        <Setter Property="Foreground" Value="#EA580C"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="RESOLVED">
+                                                        <Setter Property="Foreground" Value="#059669"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="CLOSED">
+                                                        <Setter Property="Foreground" Value="#6B7280"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Timeline Section -->
+                        <TextBlock Text="TIMELINE" FontSize="14" FontWeight="Bold" 
+                                   Foreground="#111827" Margin="0,10,0,15"/>
+
+                        <!-- Incident Date -->
+                        <Border Style="{StaticResource DetailRowStyle}">
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="INCIDENT DATE" Style="{StaticResource FieldLabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="📅" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding IncidentDate, StringFormat='dddd, MMMM dd, yyyy HH:mm'}" 
+                                                   Style="{StaticResource FieldValueStyle}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Reporter -->
+                        <Border Style="{StaticResource DetailRowStyle}">
+                            <StackPanel>
+                                <TextBlock Text="REPORTED BY" Style="{StaticResource FieldLabelStyle}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="👤" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ReporterName}" Style="{StaticResource FieldValueStyle}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Dates Grid -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="12"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Created At -->
+                            <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource DetailRowStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="CREATED AT" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{Binding CreatedAt, StringFormat='yyyy-MM-dd HH:mm'}" 
+                                               FontSize="13" Foreground="#374151" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Updated At -->
+                            <Border Grid.Column="2" Grid.Row="0" Style="{StaticResource DetailRowStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="LAST UPDATED" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{Binding UpdatedAt, StringFormat='yyyy-MM-dd HH:mm'}" 
+                                               FontSize="13" Foreground="#374151" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Resolved At -->
+                            <Border Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="3" Style="{StaticResource DetailRowStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="RESOLVED AT" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock FontSize="13" FontWeight="Medium">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding ResolvedAt, StringFormat='yyyy-MM-dd HH:mm'}"/>
+                                                <Setter Property="Foreground" Value="#10B981"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ResolvedAt}" Value="{x:Null}">
+                                                        <Setter Property="Text" Value="Not resolved yet"/>
+                                                        <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                        <Setter Property="FontStyle" Value="Italic"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </ScrollViewer>
+
+            <!-- Close Button -->
+            <Border Grid.Row="2" Margin="0,20,0,0">
+                <Button Click="CloseButton_Click" 
+                        Background="#6366F1" Foreground="White" 
+                        Padding="40,14" HorizontalAlignment="Center">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                    CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="2" BlurRadius="10" Opacity="0.2" Direction="270"/>
+                                </Border.Effect>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="✓" FontSize="18" Foreground="White" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Close" FontSize="15" FontWeight="Bold" 
+                                               Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#4F46E5"/>
+                                    <Setter TargetName="border" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect ShadowDepth="3" BlurRadius="16" Opacity="0.3" Direction="270"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Border>
+        </Grid>
+    </Border>
 </Window>
-

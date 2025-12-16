@@ -16,12 +16,14 @@ namespace CyberIncidentWPF.ViewModels
         public ICommand ShowIncidentListCommand { get; }
         public ICommand ShowCreateIncidentCommand { get; }
         public ICommand ShowAnalyticsCommand { get; }
+        public ICommand ShowUserListCommand { get; }
 
         public MainViewModel()
         {
             ShowIncidentListCommand = new RelayCommand(_ => ShowIncidentList());
             ShowCreateIncidentCommand = new RelayCommand(_ => ShowCreateIncident());
             ShowAnalyticsCommand = new RelayCommand(_ => ShowAnalytics());
+            ShowUserListCommand = new RelayCommand(_ => ShowUserList());
 
             // Show incident list by default
             ShowIncidentList();
@@ -40,6 +42,11 @@ namespace CyberIncidentWPF.ViewModels
         private void ShowAnalytics()
         {
             CurrentView = new AnalyticsViewModel();
+        }
+
+        private void ShowUserList()
+        {
+            CurrentView = new UserListViewModel();
         }
     }
 }

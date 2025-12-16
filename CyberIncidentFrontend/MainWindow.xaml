@@ -141,39 +141,19 @@
                             <TextBlock Text="Analytics" VerticalAlignment="Center" Foreground="#E5E7EB"/>
                         </StackPanel>
                     </Button>
+
+                    <Button Command="{Binding ShowUserListCommand}"
+                            Style="{StaticResource NavButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="👥" FontSize="18" Margin="0,0,12,0" VerticalAlignment="Center" Foreground="#E5E7EB"/>
+                            <TextBlock Text="Users" VerticalAlignment="Center" Foreground="#E5E7EB"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
                 <!-- Bottom Section -->
                 <StackPanel Grid.Row="2" Margin="15,0,15,20">
-                    <!-- Info Section -->
-                    <Border Background="#374151" CornerRadius="12" Padding="18" Margin="0,0,0,15">
-                        <StackPanel>
-                            <TextBlock Text="System Status" FontSize="13" FontWeight="SemiBold" 
-                                       Foreground="White" Margin="0,0,0,12"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <Ellipse Width="8" Height="8" Margin="0,0,8,0">
-                                    <Ellipse.Fill>
-                                        <RadialGradientBrush>
-                                            <GradientStop Color="#10B981" Offset="0"/>
-                                            <GradientStop Color="#059669" Offset="1"/>
-                                        </RadialGradientBrush>
-                                    </Ellipse.Fill>
-                                </Ellipse>
-                                <TextBlock Text="Connected" FontSize="11" Foreground="#D1D5DB" FontWeight="Medium"/>
-                            </StackPanel>
-                            <TextBlock Text="localhost:8080" FontSize="10" 
-                                       Foreground="#9CA3AF" FontFamily="Consolas"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Footer -->
-                    <StackPanel>
-                        <Separator Background="#374151" Margin="10,0,10,15"/>
-                        <TextBlock Text="Version 1.0.0" FontSize="10" Foreground="#6B7280" 
-                                  HorizontalAlignment="Center"/>
-                        <TextBlock Text="© 2024 CyberShield" FontSize="9" Foreground="#4B5563" 
-                                  HorizontalAlignment="Center" Margin="0,3,0,0"/>
-                    </StackPanel>
+                    
                 </StackPanel>
             </Grid>
         </Border>
