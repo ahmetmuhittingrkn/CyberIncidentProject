@@ -587,6 +587,19 @@
                     </Button.ContextMenu>
                 </Button>
                 
+                <Button Command="{Binding SendEmailCommand}" 
+                        CommandParameter="{Binding SelectedIncident}"
+                        Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,10,0"
+                        IsEnabled="{Binding SelectedIncident, Converter={StaticResource NullToBoolConverter}}"
+                        Background="#8B5CF6">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📧" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Send Email" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+                
                 <Button Command="{Binding EditIncidentCommand}" 
                         CommandParameter="{Binding SelectedIncident}"
                         Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"

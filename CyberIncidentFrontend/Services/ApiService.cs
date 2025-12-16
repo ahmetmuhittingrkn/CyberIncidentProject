@@ -244,7 +244,7 @@ namespace CyberIncidentWPF.Services
         {
             try
             {
-                // Backend sadece bu alanları bekliyor; ekstra alanları göndermeyelim
+                // Backend sadece bu alanları bekliyor
                 var payload = new
                 {
                     title = incident.Title,
@@ -252,7 +252,9 @@ namespace CyberIncidentWPF.Services
                     incidentType = incident.IncidentType,
                     severityLevel = incident.SeverityLevel,
                     incidentDate = incident.IncidentDate,
-                    reporterId = incident.ReporterId
+                    reporterId = incident.ReporterId,
+                    iocs = incident.Iocs,
+                    openedByAnalyst = incident.OpenedByAnalyst
                 };
 
                 var json = JsonSerializer.Serialize(payload, JsonOptions);
@@ -292,11 +294,11 @@ namespace CyberIncidentWPF.Services
         /// Incident durumunu günceller (PATCH).
         /// HttpRequestMessage kullanılarak framework uyumluluğu sağlanır.
         /// </summary>
-        public async Task UpdateIncidentStatusAsync(int incidentId, string status)
+        public async Task UpdateIncidentStatusAsync(int incidentId, string status, string? analystName = null)
         {
             try
             {
-                var json = JsonSerializer.Serialize(new { status }, JsonOptions);
+                var json = JsonSerializer.Serialize(new { status, analystName }, JsonOptions);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 
                 // PATCH desteği olmayan .NET sürümleri için manuel request

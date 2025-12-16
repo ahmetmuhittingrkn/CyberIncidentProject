@@ -21,6 +21,7 @@ namespace CyberIncidentWPF.ViewModels
         private DateTime _incidentDate = DateTime.Now;
         private User? _selectedReporter;
         private bool _isSubmitting;
+        private string _iocs = string.Empty;
 
         public string Title
         {
@@ -64,6 +65,12 @@ namespace CyberIncidentWPF.ViewModels
             set => SetProperty(ref _isSubmitting, value);
         }
 
+        public string Iocs
+        {
+            get => _iocs;
+            set => SetProperty(ref _iocs, value);
+        }
+
         public ObservableCollection<string> IncidentTypes { get; }
         public ObservableCollection<string> SeverityLevels { get; }
         public ObservableCollection<User> Users { get; }
@@ -100,6 +107,7 @@ namespace CyberIncidentWPF.ViewModels
             SelectedType = incident.IncidentType;
             SelectedSeverity = incident.SeverityLevel;
             IncidentDate = incident.IncidentDate;
+            Iocs = incident.Iocs ?? string.Empty;
 
             // Load users and select the reporter
             _ = LoadUsersAsync(incident.ReporterId);
@@ -151,7 +159,8 @@ namespace CyberIncidentWPF.ViewModels
                     SeverityLevel = SelectedSeverity,
                     IncidentDate = IncidentDate,
                     ReporterId = SelectedReporter?.UserId ?? 1,
-                    Status = _originalIncident.Status // Preserve status
+                    Status = _originalIncident.Status, // Preserve status
+                    Iocs = string.IsNullOrWhiteSpace(Iocs) ? null : Iocs
                 };
 
                 await _apiService.UpdateIncidentAsync(_originalIncident.IncidentId, updatedIncident);

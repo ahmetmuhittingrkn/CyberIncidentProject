@@ -40,6 +40,15 @@ namespace CyberIncidentWPF.Models
 
         [JsonPropertyName("resolvedAt")]
         public DateTime? ResolvedAt { get; set; }
+
+        [JsonPropertyName("iocs")]
+        public string? Iocs { get; set; }
+
+        [JsonPropertyName("openedByAnalyst")]
+        public string? OpenedByAnalyst { get; set; }
+
+        [JsonPropertyName("closedByAnalyst")]
+        public string? ClosedByAnalyst { get; set; }
     }
 }
 

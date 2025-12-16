@@ -81,6 +81,7 @@ namespace CyberIncidentWPF.ViewModels
         public ICommand EditIncidentCommand { get; }
         public ICommand UpdateStatusCommand { get; }
         public ICommand ViewDetailsCommand { get; }
+        public ICommand SendEmailCommand { get; }
 
         public IncidentListViewModel()
         {
@@ -111,6 +112,7 @@ namespace CyberIncidentWPF.ViewModels
             EditIncidentCommand = new RelayCommand<Incident>(EditIncident);
             UpdateStatusCommand = new RelayCommand<string>(async status => await UpdateStatusAsync(status));
             ViewDetailsCommand = new RelayCommand<Incident>(ViewDetails);
+            SendEmailCommand = new RelayCommand<Incident>(SendEmail);
 
             // Load incidents on initialization - with error handling
             System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => 
@@ -219,7 +221,24 @@ namespace CyberIncidentWPF.ViewModels
 
             try
             {
-                await _apiService.UpdateIncidentStatusAsync(SelectedIncident.IncidentId, status);
+                string? analystName = null;
+                
+                // RESOLVED veya CLOSED durumlarında analist ismini sor
+                if (status == "RESOLVED" || status == "CLOSED")
+                {
+                    var dialog = new Views.AnalystNameDialog();
+                    if (dialog.ShowDialog() == true)
+                    {
+                        analystName = dialog.AnalystName;
+                    }
+                    else
+                    {
+                        // Kullanıcı iptal ettiyse işlemi durdur
+                        return;
+                    }
+                }
+
+                await _apiService.UpdateIncidentStatusAsync(SelectedIncident.IncidentId, status, analystName);
                 await LoadIncidentsAsync();
                 MessageBox.Show("Status updated successfully!", "Success", 
                     MessageBoxButton.OK, MessageBoxImage.Information);
@@ -257,6 +276,22 @@ namespace CyberIncidentWPF.ViewModels
             
             // Refresh list after edit
             _ = LoadIncidentsAsync();
+        }
+
+        private void SendEmail(Incident? incident)
+        {
+            if (incident == null)
+                return;
+
+            try
+            {
+                EmailHelper.SendIncidentEmail(incident);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening email client: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

@@ -101,6 +101,95 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- IOCs Section -->
+                        <Border Style="{StaticResource DetailRowStyle}">
+                            <StackPanel>
+                                <TextBlock Text="🔍 INDICATORS OF COMPROMISE (IOCs)" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock LineHeight="22">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource FieldValueStyle}">
+                                            <Setter Property="Text" Value="{Binding Iocs}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Iocs}" Value="{x:Null}">
+                                                    <Setter Property="Text" Value="No IOCs recorded"/>
+                                                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                    <Setter Property="FontStyle" Value="Italic"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Iocs}" Value="">
+                                                    <Setter Property="Text" Value="No IOCs recorded"/>
+                                                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                    <Setter Property="FontStyle" Value="Italic"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Analyst Information -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Opened By Analyst -->
+                            <Border Grid.Column="0" Style="{StaticResource DetailRowStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="👤 OPENED BY ANALYST" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock FontSize="13" FontWeight="Medium">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding OpenedByAnalyst}"/>
+                                                <Setter Property="Foreground" Value="#374151"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding OpenedByAnalyst}" Value="{x:Null}">
+                                                        <Setter Property="Text" Value="Not recorded"/>
+                                                        <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                        <Setter Property="FontStyle" Value="Italic"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding OpenedByAnalyst}" Value="">
+                                                        <Setter Property="Text" Value="Not recorded"/>
+                                                        <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                        <Setter Property="FontStyle" Value="Italic"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Closed By Analyst -->
+                            <Border Grid.Column="2" Style="{StaticResource DetailRowStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="✅ CLOSED BY ANALYST" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock FontSize="13" FontWeight="Medium">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding ClosedByAnalyst}"/>
+                                                <Setter Property="Foreground" Value="#10B981"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ClosedByAnalyst}" Value="{x:Null}">
+                                                        <Setter Property="Text" Value="Not closed yet"/>
+                                                        <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                        <Setter Property="FontStyle" Value="Italic"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ClosedByAnalyst}" Value="">
+                                                        <Setter Property="Text" Value="Not closed yet"/>
+                                                        <Setter Property="Foreground" Value="#9CA3AF"/>
+                                                        <Setter Property="FontStyle" Value="Italic"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
                         <!-- Type and Severity Row -->
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>

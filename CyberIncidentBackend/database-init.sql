@@ -33,6 +33,9 @@ CREATE TABLE incidents (
     incident_date TIMESTAMP NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'OPEN',
     reporter_id INTEGER NOT NULL,
+    iocs TEXT,                               -- Bulunan IOC'ler (IP, domain, hash vb.)
+    opened_by_analyst VARCHAR(200),          -- Incident'ı açan analist
+    closed_by_analyst VARCHAR(200),          -- Incident'ı kapatan analist
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP,

@@ -7,47 +7,52 @@ import java.time.LocalDateTime;
 
 public class Incident {
     private Integer incidentId;
-    
+
     @NotBlank(message = "Title is required")
     private String title;
-    
+
     @NotBlank(message = "Description is required")
     private String description;
-    
+
     @NotBlank(message = "Incident type is required")
     private String incidentType;
-    
+
     @NotBlank(message = "Severity level is required")
     private String severityLevel;
-    
+
     @NotNull(message = "Incident date is required")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime incidentDate;
-    
+
     private String status;
-    
+
     @NotNull(message = "Reporter ID is required")
     private Integer reporterId;
-    
+
     private String reporterName;
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime resolvedAt;
+
+    // IOC ve Analist takip alanları
+    private String iocs; // Bulunan IOC'ler (IP, domain, hash vb.)
+    private String openedByAnalyst; // Incident'ı açan analist
+    private String closedByAnalyst; // Incident'ı kapatan analist
 
     // Constructors
     public Incident() {
     }
 
     public Incident(Integer incidentId, String title, String description, String incidentType,
-                    String severityLevel, LocalDateTime incidentDate, String status,
-                    Integer reporterId, String reporterName, LocalDateTime createdAt,
-                    LocalDateTime updatedAt, LocalDateTime resolvedAt) {
+            String severityLevel, LocalDateTime incidentDate, String status,
+            Integer reporterId, String reporterName, LocalDateTime createdAt,
+            LocalDateTime updatedAt, LocalDateTime resolvedAt) {
         this.incidentId = incidentId;
         this.title = title;
         this.description = description;
@@ -159,6 +164,30 @@ public class Incident {
         this.resolvedAt = resolvedAt;
     }
 
+    public String getIocs() {
+        return iocs;
+    }
+
+    public void setIocs(String iocs) {
+        this.iocs = iocs;
+    }
+
+    public String getOpenedByAnalyst() {
+        return openedByAnalyst;
+    }
+
+    public void setOpenedByAnalyst(String openedByAnalyst) {
+        this.openedByAnalyst = openedByAnalyst;
+    }
+
+    public String getClosedByAnalyst() {
+        return closedByAnalyst;
+    }
+
+    public void setClosedByAnalyst(String closedByAnalyst) {
+        this.closedByAnalyst = closedByAnalyst;
+    }
+
     @Override
     public String toString() {
         return "Incident{" +
@@ -172,4 +201,3 @@ public class Incident {
                 '}';
     }
 }
-

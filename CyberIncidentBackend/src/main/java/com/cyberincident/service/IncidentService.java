@@ -17,17 +17,14 @@ public class IncidentService {
     private final UserRepository userRepository;
 
     private static final List<String> VALID_INCIDENT_TYPES = Arrays.asList(
-        "PHISHING", "UNAUTHORIZED_ACCESS", "MALWARE", "DATA_BREACH",
-        "DOS_ATTACK", "SOCIAL_ENGINEERING", "RANSOMWARE", "INSIDER_THREAT", "OTHER"
-    );
+            "PHISHING", "UNAUTHORIZED_ACCESS", "MALWARE", "DATA_BREACH",
+            "DOS_ATTACK", "SOCIAL_ENGINEERING", "RANSOMWARE", "INSIDER_THREAT", "OTHER");
 
     private static final List<String> VALID_SEVERITY_LEVELS = Arrays.asList(
-        "LOW", "MEDIUM", "HIGH", "CRITICAL"
-    );
+            "LOW", "MEDIUM", "HIGH", "CRITICAL");
 
     private static final List<String> VALID_STATUSES = Arrays.asList(
-        "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"
-    );
+            "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED");
 
     public IncidentService(IncidentRepository incidentRepository, UserRepository userRepository) {
         this.incidentRepository = incidentRepository;
@@ -51,8 +48,8 @@ public class IncidentService {
         return incidentRepository.create(incident);
     }
 
-    public List<Incident> getAllIncidents(String type, String severity, 
-                                         LocalDateTime startDate, LocalDateTime endDate, String status) {
+    public List<Incident> getAllIncidents(String type, String severity,
+            LocalDateTime startDate, LocalDateTime endDate, String status) {
         // Validate filters
         if (type != null && !type.isEmpty() && !VALID_INCIDENT_TYPES.contains(type)) {
             throw new IllegalArgumentException("Invalid incident type: " + type);
@@ -93,7 +90,7 @@ public class IncidentService {
         return incidentRepository.update(incidentId, incident);
     }
 
-    public void updateIncidentStatus(Integer incidentId, String status) {
+    public void updateIncidentStatus(Integer incidentId, String status, String analystName) {
         // Check if incident exists
         Optional<Incident> existingIncident = incidentRepository.findById(incidentId);
         if (existingIncident.isEmpty()) {
@@ -105,7 +102,7 @@ public class IncidentService {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
 
-        incidentRepository.updateStatus(incidentId, status);
+        incidentRepository.updateStatus(incidentId, status, analystName);
     }
 
     public void deleteIncident(Integer incidentId) {
@@ -154,10 +151,9 @@ public class IncidentService {
         if (incident.getReporterId() == null) {
             throw new IllegalArgumentException("Reporter ID is required");
         }
-        if (incident.getStatus() != null && !incident.getStatus().isEmpty() 
-            && !VALID_STATUSES.contains(incident.getStatus())) {
+        if (incident.getStatus() != null && !incident.getStatus().isEmpty()
+                && !VALID_STATUSES.contains(incident.getStatus())) {
             throw new IllegalArgumentException("Invalid status: " + incident.getStatus());
         }
     }
 }
-

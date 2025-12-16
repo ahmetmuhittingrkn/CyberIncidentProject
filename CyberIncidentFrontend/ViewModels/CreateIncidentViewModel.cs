@@ -19,6 +19,8 @@ namespace CyberIncidentWPF.ViewModels
         private DateTime _incidentDate = DateTime.Now;
         private User? _selectedReporter;
         private bool _isSubmitting;
+        private string _openedByAnalyst = string.Empty;
+        private string _iocs = string.Empty;
 
         public string Title
         {
@@ -60,6 +62,18 @@ namespace CyberIncidentWPF.ViewModels
         {
             get => _isSubmitting;
             set => SetProperty(ref _isSubmitting, value);
+        }
+
+        public string OpenedByAnalyst
+        {
+            get => _openedByAnalyst;
+            set => SetProperty(ref _openedByAnalyst, value);
+        }
+
+        public string Iocs
+        {
+            get => _iocs;
+            set => SetProperty(ref _iocs, value);
         }
 
         public ObservableCollection<string> IncidentTypes { get; }
@@ -120,6 +134,7 @@ namespace CyberIncidentWPF.ViewModels
         {
             return !string.IsNullOrWhiteSpace(Title) &&
                    !string.IsNullOrWhiteSpace(Description) &&
+                   !string.IsNullOrWhiteSpace(OpenedByAnalyst) &&
                    SelectedReporter != null &&
                    !IsSubmitting;
         }
@@ -137,7 +152,9 @@ namespace CyberIncidentWPF.ViewModels
                     IncidentType = SelectedType,
                     SeverityLevel = SelectedSeverity,
                     IncidentDate = IncidentDate,
-                    ReporterId = SelectedReporter?.UserId ?? 1
+                    ReporterId = SelectedReporter?.UserId ?? 1,
+                    OpenedByAnalyst = OpenedByAnalyst,
+                    Iocs = string.IsNullOrWhiteSpace(Iocs) ? null : Iocs
                 };
 
                 var result = await _apiService.CreateIncidentAsync(incident);
@@ -165,6 +182,8 @@ namespace CyberIncidentWPF.ViewModels
             SelectedType = "PHISHING";
             SelectedSeverity = "MEDIUM";
             IncidentDate = DateTime.Now;
+            OpenedByAnalyst = string.Empty;
+            Iocs = string.Empty;
             if (Users.Count > 0) SelectedReporter = Users[0];
         }
     }

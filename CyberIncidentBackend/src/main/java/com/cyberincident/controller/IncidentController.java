@@ -106,8 +106,10 @@ public class IncidentController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Status is required"));
             }
-            
-            incidentService.updateIncidentStatus(id, status);
+
+            String analystName = body.get("analystName");
+
+            incidentService.updateIncidentStatus(id, status, analystName);
             return ResponseEntity.ok(Map.of("message", "Incident status updated successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -157,4 +159,3 @@ public class IncidentController {
         }
     }
 }
-
