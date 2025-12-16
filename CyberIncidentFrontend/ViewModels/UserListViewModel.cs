@@ -66,6 +66,7 @@ namespace CyberIncidentWPF.ViewModels
 
         public ICommand LoadUsersCommand { get; }
         public ICommand CreateUserCommand { get; }
+        public ICommand DeleteUserCommand { get; }
 
         public UserListViewModel()
         {
@@ -79,9 +80,38 @@ namespace CyberIncidentWPF.ViewModels
 
             LoadUsersCommand = new RelayCommand(async _ => await LoadUsersAsync());
             CreateUserCommand = new RelayCommand(async _ => await CreateUserAsync(), _ => CanCreateUser());
+            DeleteUserCommand = new RelayCommand(async param => await DeleteUserAsync(param));
 
             // Initial load
             _ = LoadUsersAsync();
+        }
+
+        private async Task DeleteUserAsync(object param)
+        {
+            if (param is User user)
+            {
+                var result = MessageBox.Show($"Are you sure you want to delete user '{user.Username}'?", 
+                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        IsLoading = true;
+                        await _apiService.DeleteUserAsync(user.UserId);
+                        Users.Remove(user);
+                        MessageBox.Show("User deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to delete user: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    finally
+                    {
+                        IsLoading = false;
+                    }
+                }
+            }
         }
 
         private async Task LoadUsersAsync()

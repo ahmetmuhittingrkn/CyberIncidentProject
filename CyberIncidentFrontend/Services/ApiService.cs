@@ -394,6 +394,48 @@ namespace CyberIncidentWPF.Services
             }
         }
 
+        /// <summary>
+        /// Kullanıcıyı günceller.
+        /// </summary>
+        public async Task<User> UpdateUserAsync(int id, User user)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(user, JsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PutAsync($"users/{id}", content);
+                
+                return await HandleResponseAsync<User>(response, $"Update user {id}")
+                    ?? throw new Exception("Update user: Response was null");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Failed to update user {id}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Kullanıcıyı siler.
+        /// </summary>
+        public async Task DeleteUserAsync(int id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"users/{id}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException(
+                        $"Delete user failed: {(int)response.StatusCode} - {errorContent}");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Failed to delete user {id}: {ex.Message}", ex);
+            }
+        }
+
         #endregion
 
         #region Analytics Operations
