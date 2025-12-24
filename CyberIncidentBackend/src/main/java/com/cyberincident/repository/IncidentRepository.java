@@ -144,7 +144,8 @@ public class IncidentRepository {
 
     public Incident update(Integer incidentId, Incident incident) {
         String sql = "UPDATE incidents SET title = ?, description = ?, incident_type = ?, " +
-                "severity_level = ?, incident_date = ?, status = ?, iocs = ?, updated_at = CURRENT_TIMESTAMP " +
+                "severity_level = ?, incident_date = ?, status = ?, iocs = ?, reporter_id = ?, updated_at = CURRENT_TIMESTAMP "
+                +
                 "WHERE incident_id = ?";
 
         jdbcTemplate.update(sql,
@@ -155,6 +156,7 @@ public class IncidentRepository {
                 Timestamp.valueOf(incident.getIncidentDate()),
                 incident.getStatus(),
                 incident.getIocs(),
+                incident.getReporterId(),
                 incidentId);
 
         return findById(incidentId).orElse(incident);
